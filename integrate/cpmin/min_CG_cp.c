@@ -34,12 +34,15 @@
 /*cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc*/
 /*==========================================================================*/
 void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
-               int ip_now)
+               CPCOEFFS_POS *cpCoeffsPos,int ip_now)
 /*========================================================================*/
 {/*begin routine*/
 /*========================================================================*/
 /*             Local variable declarations                                */
 #include "../typ_defs/typ_mask.h"
+    CPOPTS *cpOpts                   = &(cp->cpopts); 
+    CPCOEFFS_INFO *cpCoeffsInfo     = &(cp->cpcoeffs_info);
+    CPCOEFFS_POS *cpCoeffsPosCP     = &(cp->cpcoeffs_pos[1]);//for XLBOMD only
 
     int i,ipart,icoef,is;
     double dt;
@@ -53,6 +56,7 @@ void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
     double *zeta_up,*zeta_dn;
 
     int natm_tot  = class->clatoms_info.natm_tot;
+    int xlboOn = cpOpts->xlboOn;
     double *class_clatoms_fx   = class->clatoms_pos[ip_now].fx;
     double *class_clatoms_fy   = class->clatoms_pos[ip_now].fy;
     double *class_clatoms_fz   = class->clatoms_pos[ip_now].fz;
@@ -60,38 +64,38 @@ void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
     double *ptens_pvten     = general_data->ptens.pvten;
     double *ptens_pvten_tot =  general_data->ptens.pvten_tot;
 
-    double *cp_hess_re_up = cp->cpcoeffs_pos[ip_now].cp_hess_re_up;
-    double *cp_hess_im_up = cp->cpcoeffs_pos[ip_now].cp_hess_im_up;
-    double *cp_hess_re_dn = cp->cpcoeffs_pos[ip_now].cp_hess_re_dn;
-    double *cp_hess_im_dn = cp->cpcoeffs_pos[ip_now].cp_hess_im_dn;
+    double *cp_hess_re_up = cpCoeffsPos[ip_now].cp_hess_re_up;
+    double *cp_hess_im_up = cpCoeffsPos[ip_now].cp_hess_im_up;
+    double *cp_hess_re_dn = cpCoeffsPos[ip_now].cp_hess_re_dn;
+    double *cp_hess_im_dn = cpCoeffsPos[ip_now].cp_hess_im_dn;
 
-    double *cre_up  = cp->cpcoeffs_pos[ip_now].cre_up;
-    double *cim_up  = cp->cpcoeffs_pos[ip_now].cim_up;
-    double *cre_dn  = cp->cpcoeffs_pos[ip_now].cre_dn;
-    double *cim_dn  = cp->cpcoeffs_pos[ip_now].cim_dn;
-    double *fcre_up  = cp->cpcoeffs_pos[ip_now].fcre_up;
-    double *fcim_up  = cp->cpcoeffs_pos[ip_now].fcim_up;
-    double *fcre_dn  = cp->cpcoeffs_pos[ip_now].fcre_dn;
-    double *fcim_dn  = cp->cpcoeffs_pos[ip_now].fcim_dn;
+    double *cre_up  = cpCoeffsPos[ip_now].cre_up;
+    double *cim_up  = cpCoeffsPos[ip_now].cim_up;
+    double *cre_dn  = cpCoeffsPos[ip_now].cre_dn;
+    double *cim_dn  = cpCoeffsPos[ip_now].cim_dn;
+    double *fcre_up  = cpCoeffsPos[ip_now].fcre_up;
+    double *fcim_up  = cpCoeffsPos[ip_now].fcim_up;
+    double *fcre_dn  = cpCoeffsPos[ip_now].fcre_dn;
+    double *fcim_dn  = cpCoeffsPos[ip_now].fcim_dn;
     double *hcre_up, *hcre_dn, *hcim_up, *hcim_dn;
-    double *cmass    = cp->cpcoeffs_info.cmass;
-    int icmoff_up        = cp->cpcoeffs_info.icoef_start_up-1;
-    int icmoff_dn        = cp->cpcoeffs_info.icoef_start_dn-1;
-    int icoef_form_up        = cp->cpcoeffs_pos[ip_now].icoef_form_up;
-    int icoef_orth_up        = cp->cpcoeffs_pos[ip_now].icoef_orth_up;
-    int ifcoef_form_up        = cp->cpcoeffs_pos[ip_now].ifcoef_form_up;
-    int ifcoef_orth_up        = cp->cpcoeffs_pos[ip_now].ifcoef_orth_up;
-    int icoef_form_dn        = cp->cpcoeffs_pos[ip_now].icoef_form_dn;
-    int icoef_orth_dn        = cp->cpcoeffs_pos[ip_now].icoef_orth_dn;
-    int ifcoef_form_dn        = cp->cpcoeffs_pos[ip_now].ifcoef_form_dn;
-    int ifcoef_orth_dn        = cp->cpcoeffs_pos[ip_now].ifcoef_orth_dn;
-    int *ioff_up       = cp->cpcoeffs_info.ioff_upt;
-    int *ioff_dn       = cp->cpcoeffs_info.ioff_dnt;
+    double *cmass    = cpCoeffsInfo->cmass;
+    int icmoff_up        = cpCoeffsInfo->icoef_start_up-1;
+    int icmoff_dn        = cpCoeffsInfo->icoef_start_dn-1;
+    int icoef_form_up        = cpCoeffsPos[ip_now].icoef_form_up;
+    int icoef_orth_up        = cpCoeffsPos[ip_now].icoef_orth_up;
+    int ifcoef_form_up        = cpCoeffsPos[ip_now].ifcoef_form_up;
+    int ifcoef_orth_up        = cpCoeffsPos[ip_now].ifcoef_orth_up;
+    int icoef_form_dn        = cpCoeffsPos[ip_now].icoef_form_dn;
+    int icoef_orth_dn        = cpCoeffsPos[ip_now].icoef_orth_dn;
+    int ifcoef_form_dn        = cpCoeffsPos[ip_now].ifcoef_form_dn;
+    int ifcoef_orth_dn        = cpCoeffsPos[ip_now].ifcoef_orth_dn;
+    int *ioff_up       = cpCoeffsInfo->ioff_upt;
+    int *ioff_dn       = cpCoeffsInfo->ioff_dnt;
 
-    int nstate_up = cp->cpcoeffs_info.nstate_up;
-    int nstate_dn = cp->cpcoeffs_info.nstate_dn;
-    int ncoef     = cp->cpcoeffs_info.ncoef;
-    int cp_lsda   = cp->cpopts.cp_lsda;
+    int nstate_up = cpCoeffsInfo->nstate_up;
+    int nstate_dn = cpCoeffsInfo->nstate_dn;
+    int ncoef     = cpCoeffsInfo->ncoef;
+    int cp_lsda   = cpOpts->cp_lsda;
     int cg_reset_flag = cp->cpcoeffs_info.cg_reset_flag;
     int cp_norb =  cp->cpopts.cp_norb;
     int cp_init_min      = cp->cpopts.cp_init_min_opt;
@@ -105,7 +109,7 @@ void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
     double eenergy,eenergy_temp;
     double gamma=1.0;
     double sum_check = 0.0,sum_check_tmp=0.0;
-    int cp_para_opt = cp->cpopts.cp_para_opt;
+    int cp_para_opt = cpOpts->cp_para_opt;
 
 /*==========================================================================*/
 /* 0) Checks                                                                */
@@ -162,10 +166,10 @@ void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
     general_data->stat_avg.iter_ratl      = 0; 
 
     if(np_states==1){
-     ncoef_up      = cp->cpcoeffs_info.ncoef;
-     ncoef_dn      = cp->cpcoeffs_info.ncoef;
-     ncoef_up_max  = cp->cpcoeffs_info.ncoef;
-     ncoef_dn_max  = cp->cpcoeffs_info.ncoef;
+     ncoef_up      = cpCoeffsInfo->ncoef;
+     ncoef_dn      = cpCoeffsInfo->ncoef;
+     ncoef_up_max  = cpCoeffsInfo->ncoef;
+     ncoef_dn_max  = cpCoeffsInfo->ncoef;
     }else{
      ncoef_up     = cp->cp_comm_state_pkg_up.nstate_ncoef_proc;
      ncoef_dn     = cp->cp_comm_state_pkg_dn.nstate_ncoef_proc;
@@ -189,10 +193,10 @@ void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
         hcim_dn = (double *) cmalloc(ncoef_dn_tot*sizeof(double))-1;
       }
     }else{
-      hcre_up  = cp->cpcoeffs_pos[ip_now].vcre_up;
-      hcim_up  = cp->cpcoeffs_pos[ip_now].vcim_up;
-      hcre_dn  = cp->cpcoeffs_pos[ip_now].vcre_dn;
-      hcim_dn  = cp->cpcoeffs_pos[ip_now].vcim_dn;
+      hcre_up  = cpCoeffsPos[ip_now].vcre_up;
+      hcim_up  = cpCoeffsPos[ip_now].vcim_up;
+      hcre_dn  = cpCoeffsPos[ip_now].vcre_dn;
+      hcim_dn  = cpCoeffsPos[ip_now].vcim_dn;
     }
 
 
@@ -248,6 +252,7 @@ void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
      ptens_pvten_tot[i] = 0.0;
    }/*endfor*/
 
+   // XL-BOMD-Change cp_ks_energy_ctrl
    cp_ks_energy_ctrl(cp,ip_now,&(general_data->ewald),&(class->ewd_scr),
                        &(general_data->cell),
                        &(class->clatoms_info),
@@ -257,6 +262,7 @@ void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
                        &(general_data->simopts),
                        &(class->for_scr));
 
+   // XL-BOMD-Change get_diag_cp_hess
    get_diag_cp_hess(cp,ip_now,&(general_data->cell),gamma);
     
   eenergy_temp = general_data->stat_avg.cp_ehart
@@ -372,7 +378,16 @@ void min_CG_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
 /*==========================================================================*/
 /* V) Orthogonalize wave functions                                          */
   
+   // XL-BOMD-Change orthog_control_cp
    orthog_control_cp(cp,ip_now);
+
+/*==========================================================================*/
+/* VI) Best overlap the orbital in cp and bo in XLBOMD.                     */
+
+  if(xlboOn==1){
+    alignCGCPWaveFunction(cpOpts,cpCoeffsInfo,cpCoeffsPosCP,cpCoeffsPos);
+  }
+
  
 /*==========================================================================*/
 /* ii) Free the memory                                                      */
@@ -431,6 +446,7 @@ double diag_ovlap(int ncomp,double wght1,double wght2,double *v1_re,double *v1_i
 /*==========================================================================*/
 
 void line_min_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
+                 ,CPCOEFFS_POS *cpCoeffsPos,
                  double *zeta_up,double *zeta_dn,int ip_now,double eenergy)
 
   
@@ -459,31 +475,31 @@ void line_min_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
     double *ptens_pvten_tot    =  general_data->ptens.pvten_tot;
 
 
-    double *cre_up   = cp->cpcoeffs_pos[ip_now].cre_up;
-    double *cim_up   = cp->cpcoeffs_pos[ip_now].cim_up;
-    double *cre_dn   = cp->cpcoeffs_pos[ip_now].cre_dn;
-    double *cim_dn   = cp->cpcoeffs_pos[ip_now].cim_dn;
-    double *fcre_up  = cp->cpcoeffs_pos[ip_now].fcre_up;
-    double *fcim_up  = cp->cpcoeffs_pos[ip_now].fcim_up;
-    double *fcre_dn  = cp->cpcoeffs_pos[ip_now].fcre_dn;
-    double *fcim_dn  = cp->cpcoeffs_pos[ip_now].fcim_dn;
+    double *cre_up   = cpCoeffsPos[ip_now].cre_up;
+    double *cim_up   = cpCoeffsPos[ip_now].cim_up;
+    double *cre_dn   = cpCoeffsPos[ip_now].cre_dn;
+    double *cim_dn   = cpCoeffsPos[ip_now].cim_dn;
+    double *fcre_up  = cpCoeffsPos[ip_now].fcre_up;
+    double *fcim_up  = cpCoeffsPos[ip_now].fcim_up;
+    double *fcre_dn  = cpCoeffsPos[ip_now].fcre_dn;
+    double *fcim_dn  = cpCoeffsPos[ip_now].fcim_dn;
 
-    double *hcre_up  = cp->cpcoeffs_pos[ip_now].vcre_up;
-    double *hcim_up  = cp->cpcoeffs_pos[ip_now].vcim_up;
-    double *hcre_dn  = cp->cpcoeffs_pos[ip_now].vcre_dn;
-    double *hcim_dn  = cp->cpcoeffs_pos[ip_now].vcim_dn;
+    double *hcre_up  = cpCoeffsPos[ip_now].vcre_up;
+    double *hcim_up  = cpCoeffsPos[ip_now].vcim_up;
+    double *hcre_dn  = cpCoeffsPos[ip_now].vcre_dn;
+    double *hcim_dn  = cpCoeffsPos[ip_now].vcim_dn;
     double *cmass    = cp->cpcoeffs_info.cmass;
 
     int icmoff_up        = cp->cpcoeffs_info.icoef_start_up-1;
     int icmoff_dn        = cp->cpcoeffs_info.icoef_start_dn-1;
-    int icoef_form_up        = cp->cpcoeffs_pos[ip_now].icoef_form_up;
-    int icoef_orth_up        = cp->cpcoeffs_pos[ip_now].icoef_orth_up;
-    int ifcoef_form_up        = cp->cpcoeffs_pos[ip_now].ifcoef_form_up;
-    int ifcoef_orth_up        = cp->cpcoeffs_pos[ip_now].ifcoef_orth_up;
-    int icoef_form_dn        = cp->cpcoeffs_pos[ip_now].icoef_form_dn;
-    int icoef_orth_dn        = cp->cpcoeffs_pos[ip_now].icoef_orth_dn;
-    int ifcoef_form_dn        = cp->cpcoeffs_pos[ip_now].ifcoef_form_dn;
-    int ifcoef_orth_dn        = cp->cpcoeffs_pos[ip_now].ifcoef_orth_dn; 
+    int icoef_form_up        = cpCoeffsPos[ip_now].icoef_form_up;
+    int icoef_orth_up        = cpCoeffsPos[ip_now].icoef_orth_up;
+    int ifcoef_form_up        = cpCoeffsPos[ip_now].ifcoef_form_up;
+    int ifcoef_orth_up        = cpCoeffsPos[ip_now].ifcoef_orth_up;
+    int icoef_form_dn        = cpCoeffsPos[ip_now].icoef_form_dn;
+    int icoef_orth_dn        = cpCoeffsPos[ip_now].icoef_orth_dn;
+    int ifcoef_form_dn        = cpCoeffsPos[ip_now].ifcoef_form_dn;
+    int ifcoef_orth_dn        = cpCoeffsPos[ip_now].ifcoef_orth_dn; 
 
     int *ioff_up       = cp->cpcoeffs_info.ioff_upt;
     int *ioff_dn       = cp->cpcoeffs_info.ioff_dnt;
@@ -661,6 +677,8 @@ void line_min_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
 
 /*========================================================================*/
 /* V) Orthogonalize wave functions                                          */
+  
+ // XL-BOMD-Change orthog_control_cp
  orthog_control_cp(cp,ip_now);
 
 /*========================================================================*/
@@ -699,6 +717,7 @@ void line_min_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
      ptens_pvten_tot[i] = 0.0;
    }/*endfor*/
 
+   // XL-BOMD-Change cp_ks_energy_ctrl
    cp_ks_energy_ctrl(cp,ip_now,&(general_data->ewald),&(class->ewd_scr),
                        &(general_data->cell),
                        &(class->clatoms_info),
@@ -868,8 +887,47 @@ void line_min_cp(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *cp,
 }/* end routine */
 /*========================================================================*/
 
+/*==========================================================================*/
+/*cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc*/
+/*==========================================================================*/
+void alignCGCPWaveFunction(CPOPTS *cpOpts,CPCOEFFS_INFO* cpCoeffsInfo,
+           CPCOEFFS_POS* cpCoeffsPosSim,CPCOEFFS_POS* cpCoeffsPosScf,
+           CP_COMM_STATE_PKG *cpCommStatePkg)
+/*========================================================================*/
+{/*begin routine*/
+/*========================================================================*/
+/*             Local variable declarations                                */
+  int numCoeff = cpCoeffsInfo->ncoeff;
+  int numStateUp;
+  int numStateDown;
+  int totalNumStateUp = cpCoeffsInfo->nstate_up;
+  int totalNumStateDown = cpCoeffsInfo->nstate_dn;
+  int totalNumState = totalNumStateUp+totalNumStateDown;
+  int numProc = cpCommStatePkg->num_proc;
+  double *cpCoeffRealUpSim = cpCoeffsPosSim->cre_up;
+  double *cpCoeffImageUpSim = cpCoeffPosSim->cim_up;
+  double *cpCoeffRealDownSim = cpCoeffPosSim->cre_dn;
+  double *cpCoeffImageDownSim = cpCoeffPosSim->cim_dn;
+  double *cpCoeffRealUpScf = cpCoeffPosScf->cre_up;
+  double *cpCoeffImageUpScf = cpCoeffPosScf->cim_up;
+  double *cpCoeffRealDownScf = cpCoeffPosScf->cre_dn;
+  double *cpCoeffImageDownScf = cpCoeffPosScf->cim_dn;
+  double *overlap = (double*)cmalloc(totalNumState*totalNumState*sizeof(double));
+  double *rotationMat = (double*)cmalloc(totalNumState*totalNumState*sizeof(double));
+
+  if(numProc==1){
+    numStateUp = cpCoeffsInfo->nstate_up;
+    numStateDown = cpCoeffsInfo->nstate_dn;
+  }
+  else{
+    numStateUp = cpCoeffsInfo->nstate_up_proc;
+    numStateDown = cpCoeffsInfo->nstate_dn_proc;
+  }
 
 
+/*========================================================================*/
+}/* end routine */
+/*========================================================================*/
 
 
 

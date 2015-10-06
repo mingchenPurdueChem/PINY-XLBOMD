@@ -111,6 +111,11 @@ typedef struct cpopts{
                                    Lth: nstate_up*nstate_up           */
   double *rocc_sum_dn;            /* Lst: reciprocal sums of occ numbers 
                                    Lth: nstate_up*nstate_up           */
+
+  /********************************************/
+  /* They are options used for XL-BOMD        */
+  int xlboOn; // Num: 1= XL-BO 0=regular CPMD
+  
 } CPOPTS;
 
 /*==========================================================================*/
@@ -261,7 +266,6 @@ typedef struct cpcoeffs_pos {
   double max_diag,max_off_diag;     /* Num: max elements of ovlap matrix   */
 
 } CPCOEFFS_POS;
-
 
 typedef struct cpcoeffs_pos_dvr {
 
@@ -1052,6 +1056,7 @@ typedef struct cp {
   CPOPTS cpopts;
   CPCOEFFS_INFO cpcoeffs_info;
   CPCOEFFS_POS *cpcoeffs_pos;
+  CPCOEFFS_POS *cpCoeffsPosScfXlbo;
   CPCOEFFS_POS_DVR *cpcoeffs_pos_dvr;
   DVR_MATRIX  dvr_matrix;
   CPTHERM_INFO cptherm_info;
