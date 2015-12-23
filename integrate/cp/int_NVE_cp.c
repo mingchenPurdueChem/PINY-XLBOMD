@@ -333,11 +333,16 @@ void int_NVE_cp_XLBO(CLASS *class,BONDED *bonded,GENERAL_DATA *general_data,CP *
   
 
 /*==========================================================================*/
-/* III) Communicate atom positions to state processors                       */
+/* III) Communicate atom positions to state processors                      */
 
- if(np_states > 1 && np_forc == 1){
-   comm_coord_class_state(class,general_data,1,1,0,0);
- }/* endif */
+  if(np_states > 1 && np_forc == 1){
+    comm_coord_class_state(class,general_data,1,1,0,0);
+  }/* endif */
+
+/*==========================================================================*/
+/* III) WF minimization for XL-BOMD                                         */
+
+
 
 /*==========================================================================*/
 /* IV) Get the new energy/force                                              */
